@@ -23,12 +23,8 @@ This markdown is intended to provide ideas and make a checklist.
 
 # Checklist
 
-Point | Deadline | Comment
-:--- | :-----: | ----:
-ddd | ddd | dddd
+Point                             | Deadline  | Comment
+:---                              | :-----:   | ----:
+Summarize information by counties | NA        | Be careful of whether the summary is a simple addition
 
-## This is an <h2>
-### This is an <h3>
-#### This is an <h4>
-##### This is an <h5>
-###### This is an <h6>
+
