@@ -12,7 +12,21 @@ specific to a certain parser. -->
 <!-- Headers -->
 <!-- You can create HTML elements <h1> through <h6> easily by prepending the
 text you want to be in that element by a number of hashes (#) -->
-# This is an <h1>
+# Description
+
+This markdown is intended to provide ideas and make a checklist.
+
+# Ideas
+
+1. I was thinking that we could do an analysis at counties level. I added in Dropbox the file Eligibility2005.pdf, which has a list of counties that could be catalogued as "Rural".
+2. Something else.
+
+# Checklist
+
+Point | Deadline | Comment
+:--- | :-----: | ----:
+ddd | ddd | dddd
+
 ## This is an <h2>
 ### This is an <h3>
 #### This is an <h4>
