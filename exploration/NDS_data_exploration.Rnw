@@ -1,0 +1,193 @@
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{pdflscape}
+\usepackage{graphicx}
+\topmargin     -1.5cm  % read Lamport p.163
+\oddsidemargin -0.04cm % read Lamport p.163
+\evensidemargin -0.04cm % same as oddsidemargin but for left-hand pages
+\textwidth     16.59cm
+\textheight     22.94cm
+\parskip       7.2pt  % sets spacing between paragraphs
+\parindent       3mm  % sets leading space for paragraphs
+\usepackage{verbatim}
+\title{NDS exploring data}
+\author{NdS}
+%Statistic Deparment, Iowa State University}  \\
+\begin{document}
+\maketitle
+
+
+<<lib,echo=FALSE,message=FALSE,warning=FALSE>>=
+library(plyr)
+library(xtable)
+library(reshape)
+library(magrittr)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(gridExtra)
+library(productplots)
+library(ggparallel)
+library(cluster)
+library(randomForest)
+library(ClustOfVar)
+library(maps)
+@
+
+
+
+<<data, echo= FALSE, cache= TRUE, message= FALSE, warning= FALSE, results= 'asis'>>=
+## setwd("/Users/nataliadasilva/Dropbox/JSM 2015/")
+dat <- read.csv('pdb2014trv5_us.csv', header = T)
+
+levels(dat$State_name) <- 
+  c( "alabama", "alaska", "arizona", "arkansas",  "california", "colorado", 
+     "connecticut", "delaware", "district of columbia","florida", "georgia", 
+     "hawaii", "idaho", "illinois", "indiana", "iowa",  "kansas","kentucky", 
+     "louisiana", "maine","maryland",  "massachusetts","michigan", "minnesota" ,
+     "mississipi" ,"missouri",  "montana", "nebraska", "nevada",  
+     "new hampshire","new jersey","new mexico", "new york", "rnorth carolina",
+     "north dakota", "ohio", "oklahoma",  "oregon", "pennsylvania","rhode island" , 
+     "south carolina","south dakota", "tennessee", "texas", "utah", "vermont",
+     "virginia", "washington","west virginia", "wisconsin", "wyoming" )
+#data only with the American community Survey (ACS-5 year estimates)
+
+acs.data <- dat[, grep("ACS", colnames(dat))]
+
+@
+
+\begin{figure}
+<<sex, depenson="data",echo=FALSE,cache=TRUE,message=FALSE,warning=FALSE,results='asis',fig.height=10,fig.width=10>>=
+pop <- select(dat,Tot_Population_ACS_08_12,Tot_Population_ACSMOE_08_12,Males_ACS_08_12,Males_ACSMOE_08_12,Females_CEN_2010,Females_ACSMOE_08_12)
+
+sex.tot<-select(dat,State_name,Males_CEN_2010,Females_CEN_2010)
+colnames(sex.tot)<-c("State","Males","Females")
+m.sex<-melt(data=sex.tot)  
+
+ #ddply(m.sex,.(State),function(x) sum(x$value,na.rm=T))
+
+prodplot(data=m.sex, value~variable+State,divider=c( "hspine","vspine"))+aes(fill=variable) + theme(legend.position="bottom",legend.title=element_blank(),axis.title.y=element_blank(),axis.text.y = element_text( size=I(10)) )
+
+@
+\caption{Total number of observations in the sample by Sex and State}
+\end{figure}
+\begin{figure}
+<<poverty,dependson="data",cache=TRUE,echo=FALSE,message=FALSE,warning=FALSE,results='asis',fig.height=10,fig.width=10>>=
+
+poverty <- select(dat,State_name,Tot_Population_ACS_08_12,Prs_Blw_Pov_Lev_ACS_08_12)
+colnames(poverty) <- c("State", "Totpop","ACSPoverty")
+dat.pov <- ddply(poverty, .(State), summarize, tot = sum(Totpop,na.rm=T),pov=sum(ACSPoverty,na.rm = T))
+
+dat.pov.pl <- dat.pov %>% mutate(prop.pov = pov/tot)
+dat.pov.pl$Val <- with(dat.pov.pl, reorder(State,prop.pov) ) 
+
+ggplot(data = dat.pov.pl, aes(x = Val, y = prop.pov)) + geom_point() + scale_y_continuous("Poverty proportion") + coord_flip() + theme(legend.position="bottom",legend.title = element_blank(), axis.title.y = element_blank(), axis.text.y = element_text( size=I(7)) )
+
+  
+ 
+ 
+
+@
+\caption{Proportion of people classified as below the poverty level in the ACS by state}
+\end{figure}
+
+\begin{figure}
+<<edu,dependson="data",cache=TRUE,echo=FALSE,message=FALSE,warning=FALSE,results='asis',fig.height=10,fig.width=10>>=
+
+colnames(dat.pov.pl)[5]<-"region"
+
+# install.packages("maps")
+# install.packages("ggplot2")
+
+#load us map data
+all_states <- map_data("state")
+states <- ddply(all_states, .(region), summarize, long = mean(long),lat=mean(lat))
+
+dat.pl<-merge(states,dat.pov.pl,by="region")
+#plot all states with ggplot
+p <- ggplot()
+p <- p + 
+  geom_polygon(data = all_states, aes(x = long, y = lat, group = group),
+               colour = "white", fill = "steelblue")
+p + geom_point(data = dat.pl, aes(x = long, y = lat, size = prop.pov), color = "darkred")
+
+@
+\end{figure}
+\begin{figure}
+<<edu,dependson="data",cache=TRUE,echo=FALSE,message=FALSE,warning=FALSE,results='asis',fig.height=10,fig.width=10>>=
+college <- select(dat, State_name, Tot_Population_ACS_08_12,College_ACS_08_12)
+colnames(college) <- c("State","Totpop","ACSCollege")
+m.col <- melt(data=college) 
+m.col <- filter(m.col,value!="NA")
+s.col<-ddply(m.col,.(State),function(x) sum(x$value))
+s.col$Val <- with(s.col, reorder(State,V1) ) 
+
+qplot(data=s.col,x=Val,y=V1)+coord_flip()+ theme(legend.position="bottom",legend.title=element_blank(),axis.title.y=element_blank(),axis.text.y = element_text( size=I(10)) )+scale_y_continuous("")
+
+dat.edu <- ddply(college, .(State), summarize, tot = sum(Totpop,na.rm=T),edu=sum(ACSCollege,na.rm=T))
+
+dat.edu.pl <- dat.edu %>% mutate(prop.edu = edu/tot)
+dat.edu.pl$Val <- with(dat.edu.pl, reorder(State,prop.edu) ) 
+
+
+ggplot(data = dat.edu.pl, aes(x = Val, y = prop.edu)) + geom_point() + scale_y_continuous(" Proportion") + coord_flip() + theme(legend.position="bottom",legend.title = element_blank(), axis.title.y = element_blank(), axis.text.y = element_text( size=I(7)) )
+
+@
+\caption{Total number of persons of 25 years and over with college degree or higher in the ACS by state (sample level)}
+\end{figure}
+\newpage
+
+\section{Poverty}
+\begin{figure}[hbpt]
+<<acs.pov,dependson="data",cache=TRUE,echo=FALSE,message=FALSE,warning=FALSE,results='asis',fig.height=10,fig.width=10>>=
+
+pct <- select(dat,State_name,Pov_Univ_ACS_08_12,Prs_Blw_Pov_Lev_ACS_08_12)
+
+
+colnames(pct) <- c("State","Pov.Pop.ident","poverty")
+s.pct <- ddply(pct,.(State),function(x) data.frame(pov = sum(x$poverty, na.rm=T), tot=sum(x$Pov.Pop.ident,na.rm=T)))
+          
+
+s.pct$prop <- with(s.pct,pov/tot)
+m.pct <- melt(select(s.pct,c(State,prop)))  
+m.pct$State2 <- reorder(m.pct$State,m.pct$value)
+ggplot(m.pct, aes(x=State2, y=value))+ coord_flip() + geom_bar(stat="identity")+scale_y_continuous("")+scale_x_discrete("")
+
+
+@
+\caption{Proportion of poverty by state base on ACS}
+\end{figure}
+
+<<rf,dependson="data",cache=TRUE,echo=FALSE,results='asis'>>=
+
+
+#acs data without moe
+asc.nomoe <- acs.data[,-grep("ACSMOE",colnames(acs.data))]
+#acs data without moe and pct variables
+asc.nomoe.pct <- asc.nomoe [,-grep("pct",colnames(asc.nomoe))]
+#RF to predict poverty varibles
+#Possible predictor vbles
+# Pov_Univ_ACS_08_12
+# Prs_Blw_Pov_Lev_ACS_08_12
+# y=Prs_Blw_Pov_Lev_ACS_08_12, remove some income variables, I have to convert these before use #it
+dat.rf<-asc.nomoe.pct%>%select(-c(Pov_Univ_ACS_08_12,Med_HHD_Inc_ACS_08_12,Aggregate_HH_INC_ACS_08_12,Med_House_value_ACS_08_12,Aggr_House_Value_ACS_08_12))
+
+
+dat.rf.redu <- dat.rf[1:1000,] 
+
+
+rf <- randomForest(Prs_Blw_Pov_Lev_ACS_08_12 ~ ., 
+                   data = dat.rf.redu, importance=TRUE,
+                   proximity=TRUE,mtry=3,na.action=na.omit)
+#print(rf)
+
+@
+
+\begin{figure}
+<<rf.pl,dependson="rf",cache=TRUE,echo=FALSE,message=FALSE,warning=FALSE,results='asis',fig.height=10,fig.width=15>>=
+varImpPlot(rf)
+@
+\end{figure}
+
+
+\end{document}

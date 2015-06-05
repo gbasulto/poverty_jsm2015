@@ -1,0 +1,54 @@
+---
+title: "Poverty determinants in the US"
+author: "Natalia da Silva, Guillermo Basulto-Elias"
+date: "05/14/2015"
+output:
+  beamer_presentation:
+    toc: yes
+---
+
+# Topic 1
+
+## Introduction
+
+The objective of this analysis is to identify the determinants of the poverty in United States. First we will design an interactive and data driven web-based approach to make easy the data exploration for anyone, using this tool we can identify which factors can be relevant in the community poverty. After the graphical exploration, we will fit several statistical models to quantify the importance and behavior of the variables that could help to explain the poverty on different regions.
+
+# Topic 2
+
+## Analytic questions to be addressed:
+
+- Which are the determinants of poverty in United States?
+
+- Are the poverty determinants the same accross the states?
+
+- How much information the ACS data set provided to understand the poverty?
+
+## How the Census Planning Database will be used:
+
+The most relevant variables in our research is poverty, this variable is defined in the ACS then to identify the main determinant in the poverty we will use ACS data set while for the data exploration we will combine the two sources of information.
+
+## Data exploration
+
+
+This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+## Slide with Bullets
+
+- Bullet 1
+- Bullet 2
+- Bullet 3
+
+## Slide with R Code and Output
+
+```{r}
+summary(cars)
+```
+
+## Slide with Plot
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
